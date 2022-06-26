@@ -53,39 +53,42 @@ int main() {
 
 
 	glEnable(GL_DEPTH_TEST);
-	glEnable(GL_STENCIL_TEST);
-	glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
-
+	glEnable(GL_CULL_FACE);
+	glCullFace(GL_FRONT);
+	glFrontFace(GL_CCW);
 
 	Camera camera(width, height, glm::vec3(0.0f, 0.0f, 2.0f));
 
 	Model model("models/crow/scene.gltf");
-	Model outline("models/crow-outline/scene.gltf");
+
+	double prevTime = 0.0f, crntTime = 0.0f, timeDiff;
+	unsigned int frameCount = 0;
+
+
 	//main while loop
 	while (!glfwWindowShouldClose(window)) {
 
+		crntTime = glfwGetTime();
+		timeDiff = crntTime - prevTime;
+		frameCount++;
+		if (timeDiff >= 1.0 / 60) {
+			std::string FPS = std::to_string(frameCount / timeDiff);
+			std::string ms = std::to_string((timeDiff / frameCount) * 1000);
+			std::string newTitle = "YOUTUBE OPENGL - " + FPS + "FPS / " + ms + " ms";
+			glfwSetWindowTitle(window, newTitle.c_str());
+			prevTime = crntTime;
+			frameCount = 0;
+			//take camera controls every 1/60 second;
+			camera.Inputs(window);
+		}
 		//set bg color
 		glClearColor(0.07f, 0.13, 0.17f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 		
-		//set up camera for controls and FOV and Range
-		camera.Inputs(window);
+		//set up camera  FOV and Range
 		camera.updateMatrix(45.0f, 0.1f, 100.0f);
 
-		glStencilFunc(GL_ALWAYS, 1, 0xff);
-		glStencilMask(0xff);
 		model.Draw(shaderProgram, camera);
-
-		glStencilFunc(GL_NOTEQUAL, 1, 0xff);
-		glStencilMask(0x00);
-		glDisable(GL_DEPTH_TEST);
-		outliningProgram.Activate();
-		outline.Draw(outliningProgram, camera);
-
-		glStencilMask(0xff);
-		glStencilFunc(GL_ALWAYS, 0, 0xff);
-		glEnable(GL_DEPTH_TEST);
-
 
 		glfwSwapBuffers(window);
 		//take care of all GLFW events
